@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "picvibe"
+version = "0.1.0"
+description = "show pictures in intranet"
+authors = ["pedro"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.100.0"
+uvicorn = "^0.23.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
