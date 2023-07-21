@@ -13,28 +13,17 @@ import { ref, watch } from 'vue'
 import NavBar from '../components/NavBar.vue';
 import GalleryDisplay from '../components/GalleryDisplay.vue';
 import {useContentStore} from '../stores/contents'
+import { BACK_URL } from '../api/infrastructure'
+import { fetch_data } from '../api/resources'
 
 const selected_folder = ref('')
 const content = useContentStore()
 
-const api_url = 'http://localhost:9090'
-
-async function fetch_data(api_url) {
-  try {
-    const response = await fetch(api_url);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.log("Error fetching data: ", error);
-  }
-}
-
-let folders = await fetch_data(`${api_url}/flds`)
-
+let folders = await fetch_data(`${BACK_URL}/flds`)
 content.set_folders(folders.folders)
 
 watch(selected_folder, async function() {
-    let resources = await fetch_data(`${api_url}/rs/${selected_folder.value}`)
+    let resources = await fetch_data(`${BACK_URL}/rs/${selected_folder.value}`)
     content.set_resources(selected_folder.value, resources.files)
 })
 

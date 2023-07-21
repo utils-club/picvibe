@@ -1,6 +1,10 @@
 <template>
     <div class="content">
-        <img :src="content.selected_image" alt="Image" @keydown.left="content.back" @keydown.right="content.next">
+        <img v-if="content.selected_is_image" :src="content.selected_image" @keydown.left="content.back" @keydown.right="content.next">
+        <video v-else-if="content.selected_is_video" :key="content.selected_image" controls width="400">
+            <source :src="content.selected_image">
+        </video>
+        <div v-else>cant show this</div>
     </div>
 </template>
 

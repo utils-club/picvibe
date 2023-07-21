@@ -1,15 +1,49 @@
+"""Publish contents
+"""
 import os
 import argparse
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from subprocess import Popen
+import subprocess
 
-app = FastAPI()
 
 repo_pref = "rp"
 pool = []
 base_dir = os.path.dirname(__file__)
+dist_folder = os.path.join(base_dir, 'dist')
+
+
+def get_args():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("folder_path", help="Folder path to be mounted as static repo")
+    parser.add_argument("--update", help="Update front", type=bool, default=False)
+    args = parser.parse_args()
+    return args
+
+
+def check_dist_folder(force_update:bool = False):
+      # Replace with the actual path to your "dist" folder
+    if not os.path.exists(dist_folder):
+        print("Error: 'dist' folder does not exist.")
+        return
+    dist_contents = os.listdir(dist_folder)
+    if "index.html" not in dist_contents or force_update:
+        os.chdir(os.path.join(base_dir, 'pickvibe'))
+        subprocess.run(["npm", 'run', 'build'], check=True)
+        subprocess.run(["rm", '-vr', dist_folder], check=True)
+        subprocess.run(["cp", '-vrf', 'dist', '..'], check=True)
+        os.chdir(base_dir)
+        print("Subprocess executed.")
+    else:
+        print("'index.html' file found in 'dist' folder.")
+
+
+app = FastAPI()
+
+
 
 origins = [
     "http://localhost:9090",
@@ -28,15 +62,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Parse command-line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("folder_path", help="Folder path to be mounted as static repo")
-args = parser.parse_args()
+
+args = get_args()
 target_folder = os.path.abspath(args.folder_path)
 
 
 @app.on_event("startup")
 def startup_event():
+    check_dist_folder(force_update=args.update)
     static_app_process = Popen(
         [
             "python3",
