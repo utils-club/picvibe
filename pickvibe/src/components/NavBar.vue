@@ -17,9 +17,11 @@ const content = useContentStore()
 .navbar {
     display: flex;
     flex-direction: row;
+    margin-bottom: 10px;
 }
 button {
     flex-grow: 1;
     margin: 3px;
+    padding: 15px 10px;
 }
 </style>

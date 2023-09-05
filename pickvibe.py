@@ -1,58 +1,27 @@
-"""Publish contents
-"""
 import os
-import argparse
+
+
+import random
+
+from subprocess import Popen
+from datetime import datetime
+
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from subprocess import Popen
-import subprocess
+
+from settings import origins, base_dir, repo_pref
+from interface import get_args
+from front_builder import check_dist_folder
+from models import Note
 
 
-repo_pref = "rp"
 pool = []
-base_dir = os.path.dirname(__file__)
-dist_folder = os.path.join(base_dir, 'dist')
-
-
-def get_args():
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("folder_path", help="Folder path to be mounted as static repo")
-    parser.add_argument("--update", help="Update front", type=bool, default=False)
-    args = parser.parse_args()
-    return args
-
-
-def check_dist_folder(force_update:bool = False):
-      # Replace with the actual path to your "dist" folder
-    if not os.path.exists(dist_folder):
-        print("Error: 'dist' folder does not exist.")
-        return
-    dist_contents = os.listdir(dist_folder)
-    if "index.html" not in dist_contents or force_update:
-        os.chdir(os.path.join(base_dir, 'pickvibe'))
-        subprocess.run(["npm", 'run', 'build'], check=True)
-        subprocess.run(["rm", '-vr', dist_folder], check=True)
-        subprocess.run(["cp", '-vrf', 'dist', '..'], check=True)
-        os.chdir(base_dir)
-        print("Subprocess executed.")
-    else:
-        print("'index.html' file found in 'dist' folder.")
 
 
 app = FastAPI()
 
-
-
-origins = [
-    "http://localhost:9090",
-    "http://localhost:8080",
-    'http://localhost:5173',
-    "http://0.0.0.0:9090",
-    "http://0.0.0.0:8080",
-    "http://0.0.0.0:5173",
-]
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,13 +38,16 @@ target_folder = os.path.abspath(args.folder_path)
 
 @app.on_event("startup")
 def startup_event():
+    """Build frontend if dont exists or need to be updated
+    and run a static server to serve frontend
+    """
     check_dist_folder(force_update=args.update)
     static_app_process = Popen(
         [
             "python3",
             "-m",
             "http.server",
-            "8080",
+            "4070",
             "-b",
             "0.0.0.0",
             "-d",
@@ -87,6 +59,7 @@ def startup_event():
 
 @app.on_event("shutdown")
 def shutdown_event():
+    """Kill frontend static server"""
     for p in pool:
         p.kill()
 
@@ -97,8 +70,9 @@ app.mount(f"/{repo_pref}", StaticFiles(directory=target_folder), name="static")
 
 @app.get("/flds")
 async def get_folders():
-    # Logic to retrieve list of folders inside the given folder path
-    # You can use os.listdir(args.folder_path) or any other method
+    """Logic to retrieve list of folders inside the given folder path
+    You can use os.listdir(args.folder_path) or any other method
+    """
     folders = [
         a
         for a in os.listdir(target_folder)
@@ -109,18 +83,32 @@ async def get_folders():
 
 @app.get("/rs/{folder}")
 async def get_files(folder: str):
-    # Logic to retrieve list of files inside the given folder path
-    # You can use os.listdir(args.folder_path) or any other method
+    """Logic to retrieve list of files inside the given folder path
+    You can use os.listdir(args.folder_path) or any other method
+    """
     contents = [
         a
         for a in os.listdir(os.path.join(target_folder, folder))
         if os.path.isfile(os.path.join(target_folder, folder, a))
     ]
+    current_time = datetime.now()
+    random.seed(current_time.year + current_time.day + current_time.month)
+    random.shuffle(contents)
     return {"files": contents}
+
+
+@app.post("/note/")
+async def create_note(note: Note):
+    try:
+        with open("tags.txt", "a") as file:
+            file.write(f"{note.model_dump_json()}\n")
+        return {"succeded": True}
+    except Exception as e:
+        return {"succeded": False}
 
 
 if __name__ == "__main__":
     import uvicorn
 
     # Run the FastAPI application on 0.0.0.0:9090
-    uvicorn.run(app, host="0.0.0.0", port=9090)
+    uvicorn.run(app, host="0.0.0.0", port=4071)

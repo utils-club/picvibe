@@ -1,9 +1,14 @@
 <template>
     <div class="content">
-        <img v-if="content.selected_is_image" :src="content.selected_image" @keydown.left="content.back" @keydown.right="content.next">
-        <video v-else-if="content.selected_is_video" :key="content.selected_image" controls width="400">
-            <source :src="content.selected_image">
-        </video>
+        <div v-if="content.selected_is_image">
+            <img :src="content.selected_image" @keydown.left="content.back" @keydown.right="content.next">
+        </div>
+        <div v-else-if="content.selected_is_video">
+            <div>{{ vid_title(content.selected_image) }}</div>
+            <video :key="content.selected_image" controls width="400" poster preload="metadata">
+                <source :src="content.selected_image" :type="vid_type(content.selected_image)">
+            </video>
+        </div>
         <div v-else>cant show this</div>
     </div>
 </template>
@@ -12,6 +17,18 @@
 import {useContentStore} from '../stores/contents'
 
 const content = useContentStore()
+
+function vid_type(link) {
+    let items = link.split('.')
+    let termination = items[items.length - 1]
+    return `video/${termination}`
+}
+
+function vid_title(link) {
+    let items = link.split('/')
+    let vid_name = items[items.length - 1]
+    return vid_name
+}
 
 </script>
 
