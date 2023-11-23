@@ -24,7 +24,7 @@ export const useContentStore = defineStore('content', () => {
     if (selected_img_indx.value < resource_list.value.length - 1) {
       selected_img_indx.value += 1
     } else {
-      selected_img_indx.value = 1
+      selected_img_indx.value = 0
     }
     
   }

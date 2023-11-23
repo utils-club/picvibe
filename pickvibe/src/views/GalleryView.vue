@@ -1,10 +1,10 @@
 <template>
     <div class="gallery_container">
         <nav-bar></nav-bar>
+        <gallery-display></gallery-display>
         <select v-model="selected_folder">
             <option :value="ct" v-for="ct in content.folder_list" :key="ct">{{ ct }}</option>
         </select>
-        <gallery-display></gallery-display>
     </div>
 </template>
 
